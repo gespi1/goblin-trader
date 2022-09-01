@@ -5,7 +5,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
+	"goblin-trader/pkg/apis/twelvedata"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,8 +17,9 @@ var runCmd = &cobra.Command{
 	Short: "Runs to query historical data using an indicator",
 	Long:  `CLI tool to get quick historical data based on a indicator(s)`,
 	Run: func(cmd *cobra.Command, args []string) {
-		myViper := viper.GetViper()
-		fmt.Println(myViper.GetString("asset"))
+		v := viper.GetViper()
+		twelve := twelvedata.Init(v)
+		twelve.TimeSeries()
 	},
 }
 
@@ -33,8 +34,9 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
+
 	runCmd.PersistentFlags().StringP("start-date", "s", "", "start date to query a chart from; e.g 2022-08-06")
 	runCmd.PersistentFlags().StringP("end-date", "e", "", "end date to query a chart from; e.g. 2022-08-31")
-	viper.BindPFlags(rootCmd.PersistentFlags())
+	viper.BindPFlags(runCmd.PersistentFlags())
 
 }

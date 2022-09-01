@@ -1,16 +1,17 @@
 package twelvedata
 
 type Config struct {
-	Asset     string `json:"asset"`
-	BaseURL   string `json:"base_url" default:"https://api.twelvedata.com"`
-	Interval  string `json:"interval"`
-	Token     string `json:"token"`
-	Exchange  string `json:"exchange"`
-	StartDate string `json:"start_date"`
-	EndDate   string `json:"end_date"`
-	Uri       Uri    `json:"uri"`
+	Asset      string
+	BaseURL    string `default:"https://api.twelvedata.com"`
+	DateFormat string
+	Interval   string
+	Exchange   string
+	EndDate    string
+	StartDate  string
+	Token      string
+	Uri        Uri
 }
 
 type Uri struct {
-	TimeSeries string `json:"time_series" default:"/time_series?apikey={apikey}&symbol={symbol}&interval={interval}&exchange={exchange}&start_date={start_date}&end_date={end_date}"`
+	TimeSeries string `default:"/time_series?apikey={{ .Token }}&symbol={{ .Asset }}&interval={{ .Interval }}&exchange={{ .Exchange }}&start_date={{ .StartDate }}&end_date={{ .EndDate }}"`
 }

@@ -4,7 +4,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 */
 package main
 
-import "github.com/gespi1/goblin-trader/cmd"
+import "goblin-trader/cmd"
 
 func main() {
 	cmd.Execute()

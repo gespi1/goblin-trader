@@ -6,7 +6,9 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,6 +28,8 @@ a Service to make trades on your behalf based on indicators.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	v := viper.GetViper()
+	setLogLevel(v.GetString("log-level"))
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -37,14 +41,37 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.logrus.yaml)")
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goblin.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	runCmd.PersistentFlags().StringP("asset", "a", "BTC", "asset to assess; e.g. BTC, ETH. Additionally add an exhange to query; e.g. BTC/COINBASE, ETH/KRAKEN")
-	runCmd.PersistentFlags().StringP("indicator", "i", "supertrend", "name of the indicator to use")
-	runCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 5m 10m 1h 1d 1w")
+
+	rootCmd.PersistentFlags().StringP("asset", "a", "BTC/USD", "asset to query; e.g. BTC/USD, ETH/USD")
+	rootCmd.PersistentFlags().StringP("exchange", "x", "BINANCE", "exchange to pull data from; e.g. BINANCE, COINBASE")
+	rootCmd.PersistentFlags().StringP("indicator", "i", "supertrend", "name of the indicator to use")
+	rootCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 5m 10m 1h 1d 1w")
+	rootCmd.PersistentFlags().StringP("log-level", "v", "DEBUG", "log level: INFO, WARN, ERROR, DEBUG")
 	viper.BindPFlags(rootCmd.PersistentFlags())
+	viper.AutomaticEnv()
+
 	// rootCmd.MarkFlagRequired("asset")
 	// rootCmd.MarkFlagRequired("indicator")
+}
+
+func setLogLevel(loglevel string) {
+	l := strings.ToLower(loglevel)
+	if l == "info" {
+		log.SetLevel(log.InfoLevel)
+	} else if l == "warn" {
+		log.SetLevel(log.WarnLevel)
+	} else if l == "error" {
+		log.SetLevel(log.ErrorLevel)
+	} else if l == "debug" {
+		log.SetLevel(log.DebugLevel)
+	} else if l == "fatal" {
+		log.SetLevel(log.FatalLevel)
+	} else {
+		log.SetLevel(log.ErrorLevel)
+		log.Warn("no log level matched setting to default, ERROR")
+	}
 }
