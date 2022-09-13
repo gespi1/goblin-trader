@@ -20,6 +20,11 @@ var runCmd = &cobra.Command{
 		v := viper.GetViper()
 		twelve := twelvedata.Init(v)
 		twelve.TimeSeries()
+		// if err != nil {
+		// 	log.Fatalf("not able to get dataframe from timeseries: %v", err)
+		// }
+		// fmt.Println(df)
+		// twelvedata.SuperTrend(df)
 	},
 }
 

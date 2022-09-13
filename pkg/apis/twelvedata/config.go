@@ -13,5 +13,5 @@ type Config struct {
 }
 
 type Uri struct {
-	TimeSeries string `default:"/time_series?apikey={{ .Token }}&symbol={{ .Asset }}&interval={{ .Interval }}&exchange={{ .Exchange }}&start_date={{ .StartDate }}&end_date={{ .EndDate }}"`
+	TimeSeries string `default:"/time_series?apikey={{ .Token }}&symbol={{ .Asset }}&interval={{ .Interval }}&exchange={{ .Exchange }}&start_date={{ .StartDate }}&end_date={{ .EndDate }}&order=ASC"`
 }
