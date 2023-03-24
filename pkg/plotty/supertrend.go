@@ -1,9 +1,9 @@
 package plotty
 
 import (
+	"goblin-trader/pkg/common"
 	"image/color"
 	"math"
-	"time"
 
 	"github.com/sdcoffey/techan"
 	log "github.com/sirupsen/logrus"
@@ -32,8 +32,7 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	p.Add(plotter.NewGrid())
 
 	// Set the custom time ticker for the x-axis
-	p.X.Tick.Marker = TimeTicker{NLabels: 12}
-	p.Y.Tick.Marker = customTickMarker{NumTicks: 20}
+	p.X.Tick.Marker = common.TimeTicker{NLabels: 12}
 
 	pricePlot := make(plotter.XYs, len(pricesY))
 	superTrendPlot := make(plotter.XYs, 0, len(superTrend))
@@ -51,7 +50,7 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	}
 
 	for _, segment := range upperBandSegments {
-		upperLine, err := plotter.NewLine(XYPoints(segment))
+		upperLine, err := plotter.NewLine(common.XYPoints(segment))
 		if err != nil {
 			log.Fatalf("Failed to create upperBand line: %v", err)
 		}
@@ -60,7 +59,7 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	}
 
 	for _, segment := range lowerBandSegments {
-		lowerLine, err := plotter.NewLine(XYPoints(segment))
+		lowerLine, err := plotter.NewLine(common.XYPoints(segment))
 		if err != nil {
 			log.Fatalf("Failed to create lowerBand line: %v", err)
 		}
@@ -95,30 +94,6 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	}
 }
 
-type TimeTicker struct {
-	// How many labels to show on the x-axis
-	NLabels int
-}
-
-func (t TimeTicker) Ticks(min, max float64) []plot.Tick {
-	delta := (max - min) / float64(t.NLabels)
-
-	ticks := make([]plot.Tick, t.NLabels)
-	for i := 0; i < t.NLabels; i++ {
-		value := min + delta*float64(i)
-		ticks[i] = plot.Tick{
-			Value: value,
-			Label: formatEpochTime(int64(value)),
-		}
-	}
-	return ticks
-}
-
-func formatEpochTime(epoch int64) string {
-	t := time.Unix(epoch, 0)
-	return t.Format("2006-01-02")
-}
-
 func createLineSegments(epochTimes, data []float64) [][]plotter.XY {
 	segments := make([][]plotter.XY, 0)
 	currentSegment := make([]plotter.XY, 0)
@@ -139,37 +114,4 @@ func createLineSegments(epochTimes, data []float64) [][]plotter.XY {
 	}
 
 	return segments
-}
-
-type XYPoints []plotter.XY
-
-func (p XYPoints) Len() int {
-	return len(p)
-}
-
-func (p XYPoints) XY(i int) (x, y float64) {
-	return p[i].X, p[i].Y
-}
-
-type customTickMarker struct {
-	plot.DefaultTicks
-	NumTicks int
-}
-
-func (t customTickMarker) Ticks(min, max float64) []plot.Tick {
-	ticks := t.DefaultTicks.Ticks(min, max)
-	if t.NumTicks <= 0 {
-		return ticks
-	}
-
-	newTicks := make([]plot.Tick, 0, t.NumTicks)
-	step := len(ticks) / t.NumTicks
-	if step == 0 {
-		step = 1
-	}
-
-	for i := 0; i < len(ticks); i += step {
-		newTicks = append(newTicks, ticks[i])
-	}
-	return newTicks
 }
