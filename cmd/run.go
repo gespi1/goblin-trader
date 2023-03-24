@@ -5,7 +5,11 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"goblin-trader/pkg/apis/twelvedata"
+	"goblin-trader/pkg/indicators"
+	"goblin-trader/pkg/plotty"
+	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,12 +23,16 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		v := viper.GetViper()
 		twelve := twelvedata.Init(v)
-		twelve.TimeSeries()
-		// if err != nil {
-		// 	log.Fatalf("not able to get dataframe from timeseries: %v", err)
-		// }
-		// fmt.Println(df)
-		// twelvedata.SuperTrend(df)
+		series, err := twelve.TimeSeries()
+		if err != nil {
+			log.Fatalf("not able to get dataframe from timeseries: %v", err)
+		}
+		// fmt.Println("YOOOOOO")
+		// fmt.Println(series)
+		// traditional SuperTrend lookback and multiplier values are 10 and 3 respectively
+		ub, lb, superTrend := indicators.SuperTrend(series, 10, 3)
+		plotty.SuperTrend(series, ub, lb, superTrend)
+		fmt.Printf("%v %v", ub, lb)
 	},
 }
 

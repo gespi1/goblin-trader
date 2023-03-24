@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,8 +20,6 @@ import (
 
 	"github.com/mcuadros/go-defaults"
 	"github.com/spf13/viper"
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
 )
 
 func Init(v *viper.Viper) *Config {
@@ -52,19 +49,9 @@ type TimeSeries struct {
 	Status string                   `json:"status"`
 }
 
-// type TimeSeriesValues struct {
-// 	Datetime string  `json:"datetime"`
-// 	Open     string  `json:"open"`
-// 	High     string  `json:"high"`
-// 	Low      string  `json:"low"`
-// 	Close    string  `json:"close"`
-// 	Unixtime float64 `json:"unixtime"`
-// 	Volume   float64 `json:"volume"`
-// }
-
 type XY struct{ X, Y float64 }
 
-func (c *Config) TimeSeries() {
+func (c *Config) TimeSeries() (*techan.TimeSeries, error) {
 	var ts TimeSeries
 
 	// construct URL
@@ -113,7 +100,7 @@ func (c *Config) TimeSeries() {
 
 	for _, v := range ts.Values {
 		start := c.dateTimeToUnix(fmt.Sprintf("%v", v["datetime"]))
-		period := techan.NewTimePeriod(time.Unix(start, 0), time.Hour*24)
+		period := techan.NewTimePeriod(time.Unix(start, 0), time.Hour*168)
 
 		candle := techan.NewCandle(period)
 		candle.OpenPrice = big.NewFromString(fmt.Sprintf("%v", v["open"]))
@@ -126,47 +113,7 @@ func (c *Config) TimeSeries() {
 		}
 	}
 
-	// plotting
-	var closeY []string
-	var dateX []string
-
-	for _, s := range series.Candles {
-		closeY = append(closeY, s.ClosePrice.String())
-		dateX = append(dateX, strconv.FormatInt(s.Period.End.Unix(), 10))
-	}
-
-	XYs, err := makeXYs(dateX, closeY)
-	if err != nil {
-		log.Error(err)
-	}
-
-	f, err := os.Create("out.png")
-	if err != nil {
-		log.Errorf("could not create out.png: %v", err)
-	}
-
-	p := plot.New()
-	line, err := plotter.NewLine(XYs)
-	if err != nil {
-		log.Error(err)
-	}
-
-	p.Add(line)
-
-	wt, err := p.WriterTo(1024, 512, "png")
-	if err != nil {
-		log.Errorf("could not create writer: %v", err)
-	}
-
-	_, err = wt.WriteTo(f)
-	if err != nil {
-		log.Errorf("could not create out.png: %v", err)
-	}
-
-	if err := f.Close(); err != nil {
-		log.Errorf("could not close out.png: %v", err)
-	}
-
+	return series, nil
 }
 
 func (c *Config) dateTimeToUnix(datetime string) int64 {
@@ -190,31 +137,6 @@ func determineTimeFormat(interval string) string {
 	} else {
 		log.Debug("Time format NOT 'h' or 'min': 2006-01-02")
 		return "2006-01-02"
-	}
-
-}
-
-func makeXYs(x, y []string) (plotter.XYs, error) {
-	var XYs plotter.XYs
-	if len(x) == len(y) {
-		log.Info("x and y match length. Creating X and Y points for graph")
-
-		for i, _ := range x {
-			fmt.Println(x[i])
-			x64, err := strconv.ParseFloat(x[i], 64)
-			if err != nil {
-				log.Errorf("wasn't able to parse x64 %v: %v", x[0], err)
-			}
-			y64, err := strconv.ParseFloat(y[i], 64)
-			if err != nil {
-				log.Errorf("wasn't able to parse y64 %v: %v", y[1], err)
-			}
-
-			XYs = append(XYs, plotter.XY{X: x64, Y: y64})
-		}
-		return XYs, nil
-	} else {
-		return nil, fmt.Errorf("x:( %v )and y:( %v ) DON'T match length", x, y)
 	}
 
 }
