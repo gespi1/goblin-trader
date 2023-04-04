@@ -49,7 +49,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("asset", "a", "BTC/USD", "asset to query; e.g. BTC/USD, ETH/USD")
 	rootCmd.PersistentFlags().StringP("exchange", "x", "BINANCE", "exchange to pull data from; e.g. BINANCE, COINBASE")
 	rootCmd.PersistentFlags().StringP("indicator", "i", "supertrend", "name of the indicator to use")
-	rootCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 5m 10m 1h 1d 1w")
+	rootCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 5m 10m 1h 1d 1week")
 	rootCmd.PersistentFlags().StringP("log-level", "v", "DEBUG", "log level: INFO, WARN, ERROR, DEBUG")
 	viper.BindPFlags(rootCmd.PersistentFlags())
 	viper.AutomaticEnv()

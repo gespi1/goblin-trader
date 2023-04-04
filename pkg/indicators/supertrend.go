@@ -23,31 +23,35 @@ func SuperTrend(series *techan.TimeSeries, lookback int, multiplier float64) (ub
 	atr := common.Dump(a)
 	hla := highLowAvg(series)
 	ub, lb = calculateBands(hla, atr, multiplier)
-	log.Debugf("ub: %v || lb: %v ", ub, lb)
 
-	var prev int
 	length := len(closePrices)
 	superTrend = make([]bool, length)
 	// Initialize the first SuperTrend value
 	superTrend[0] = true
 	// calculate supertrend values
 	for i := 1; i < length; i++ {
-		if closePrices[i] > ub[prev] {
+		if closePrices[i] > ub[i-1] {
 			superTrend[i] = true
-			lb[i] = math.NaN()
-		} else if closePrices[i] < lb[prev] {
-			superTrend[i] = false
 			ub[i] = math.NaN()
+		} else if closePrices[i] < lb[i-1] {
+			superTrend[i] = false
+			lb[i] = math.NaN()
 		} else {
-			superTrend[i] = superTrend[prev]
+			superTrend[i] = superTrend[i-1]
 
-			if superTrend[i] {
-				lb[i] = math.Max(lb[i], lb[prev])
+			if superTrend[i] && lb[i] < lb[i-1] {
+				lb[i] = lb[i-1]
 				ub[i] = math.NaN()
-			} else {
-				ub[i] = math.Min(ub[i], ub[prev])
+			}
+			if !superTrend[i] && ub[i] > ub[i-1] {
+				ub[i] = ub[i-1]
 				lb[i] = math.NaN()
 			}
+		}
+		if superTrend[i] {
+			ub[i] = math.NaN()
+		} else {
+			lb[i] = math.NaN()
 		}
 	}
 
@@ -61,7 +65,7 @@ func SuperTrend(series *techan.TimeSeries, lookback int, multiplier float64) (ub
 func highLowAvg(series *techan.TimeSeries) []float64 {
 	var hla []float64
 	for _, s := range series.Candles {
-		hla = append(hla, (s.MaxPrice.Add(s.MinPrice).Float() / 2))
+		hla = append(hla, ((s.MaxPrice.Add(s.MinPrice).Float()) / 2))
 	}
 	return hla
 }

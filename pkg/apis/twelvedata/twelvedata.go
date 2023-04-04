@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"regexp"
-	"strings"
 	"time"
 
 	"goblin-trader/pkg/common"
@@ -22,6 +20,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+type TimeSeries struct {
+	Meta   map[string]string        `json:"meta"`
+	Values []map[string]interface{} `json:"values"`
+	Status string                   `json:"status"`
+}
+
+type XY struct{ X, Y float64 }
+
 func Init(v *viper.Viper) *Config {
 	uri := Uri{}
 
@@ -30,7 +36,7 @@ func Init(v *viper.Viper) *Config {
 
 	tdConf := new(Config)
 	tdConf.Asset = v.GetString("asset")
-	tdConf.DateFormat = determineTimeFormat(v.GetString("interval"))
+	tdConf.DateFormat = common.DetermineTimeFormat(v.GetString("interval"))
 	tdConf.Interval = v.GetString("interval")
 	tdConf.Exchange = v.GetString("exchange")
 	tdConf.EndDate = endDate
@@ -38,18 +44,11 @@ func Init(v *viper.Viper) *Config {
 	tdConf.Token = v.GetString("TWELVE_TOKEN")
 	tdConf.Uri = uri
 
+	// if configs are missing a value, a default will be set as the value
 	defaults.SetDefaults(tdConf)
 
 	return tdConf
 }
-
-type TimeSeries struct {
-	Meta   map[string]string        `json:"meta"`
-	Values []map[string]interface{} `json:"values"`
-	Status string                   `json:"status"`
-}
-
-type XY struct{ X, Y float64 }
 
 func (c *Config) TimeSeries() (*techan.TimeSeries, error) {
 	var ts TimeSeries
@@ -99,8 +98,12 @@ func (c *Config) TimeSeries() (*techan.TimeSeries, error) {
 	series := techan.NewTimeSeries()
 
 	for _, v := range ts.Values {
-		start := c.dateTimeToUnix(fmt.Sprintf("%v", v["datetime"]))
-		period := techan.NewTimePeriod(time.Unix(start, 0), time.Hour*168)
+		start := common.DateTimeToUnix(c.DateFormat, fmt.Sprintf("%v", v["datetime"]))
+		intervalInMinutes, err := common.DetermineIntervalInMin(c.Interval)
+		if err != nil {
+			log.Errorf("error: %v", err)
+		}
+		period := techan.NewTimePeriod(time.Unix(start, 0), time.Minute*time.Duration(intervalInMinutes))
 
 		candle := techan.NewCandle(period)
 		candle.OpenPrice = big.NewFromString(fmt.Sprintf("%v", v["open"]))
@@ -114,29 +117,4 @@ func (c *Config) TimeSeries() (*techan.TimeSeries, error) {
 	}
 
 	return series, nil
-}
-
-func (c *Config) dateTimeToUnix(datetime string) int64 {
-	tm, err := time.Parse(c.DateFormat, datetime)
-	if err != nil {
-		log.Errorf("wasn't able to parse time %v: %v", datetime, err)
-	}
-
-	return tm.Unix()
-}
-
-func determineTimeFormat(interval string) string {
-	match, err := regexp.MatchString(`^(\d{1}|\d{2})h$`, interval)
-	if err != nil {
-		log.Errorf("matching regex %v: %v", interval, err)
-	}
-
-	if match || strings.Contains(interval, "min") {
-		log.Debug("Time format in 'h' or 'min': 2006-01-02 15:04:05")
-		return "2006-01-02 15:04:05"
-	} else {
-		log.Debug("Time format NOT 'h' or 'min': 2006-01-02")
-		return "2006-01-02"
-	}
-
 }

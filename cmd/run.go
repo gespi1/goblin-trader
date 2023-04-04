@@ -5,7 +5,6 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"goblin-trader/pkg/apis/twelvedata"
 	"goblin-trader/pkg/indicators"
 	"goblin-trader/pkg/plotty"
@@ -32,7 +31,6 @@ var runCmd = &cobra.Command{
 		// traditional SuperTrend lookback and multiplier values are 10 and 3 respectively
 		ub, lb, superTrend := indicators.SuperTrend(series, 10, 3)
 		plotty.SuperTrend(series, ub, lb, superTrend)
-		fmt.Printf("%v %v", ub, lb)
 	},
 }
 

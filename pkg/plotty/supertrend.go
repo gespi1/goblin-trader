@@ -18,10 +18,12 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	// plotting
 	var pricesY []float64
 	var datesX []float64
+	var datesHumanReadable []string
 
 	for _, s := range series.Candles {
 		pricesY = append(pricesY, s.ClosePrice.Float())
 		datesX = append(datesX, float64(s.Period.End.Unix()))
+		datesHumanReadable = append(datesHumanReadable, s.Period.End.String())
 	}
 
 	p := plot.New()
@@ -92,6 +94,9 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	if err := p.Save(10*vg.Inch, 5*vg.Inch, "supertrend.png"); err != nil {
 		log.Fatalf("Failed to save plot: %v", err)
 	}
+
+	df := common.CreateDataFrame("Date", datesHumanReadable, "Price", pricesY, "SuperTrend", superTrend, "LowerBand", lb, "UpperBand", ub)
+	common.WriteDFToFile(df, "./superTrendDF.csv")
 }
 
 func createLineSegments(epochTimes, data []float64) [][]plotter.XY {
