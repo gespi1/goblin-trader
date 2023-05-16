@@ -1,14 +1,12 @@
 /*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+Copyright © 2023 Giancarlo Espinoza <gespiza@gmail.com>
 
 */
 package cmd
 
 import (
 	"os"
-	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,8 +26,6 @@ a Service to make trades on your behalf based on indicators.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	v := viper.GetViper()
-	setLogLevel(v.GetString("log-level"))
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -51,27 +47,11 @@ func init() {
 	rootCmd.PersistentFlags().StringP("indicator", "i", "supertrend", "name of the indicator to use")
 	rootCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 5m 10m 1h 1d 1week")
 	rootCmd.PersistentFlags().StringP("log-level", "v", "DEBUG", "log level: INFO, WARN, ERROR, DEBUG")
+	rootCmd.PersistentFlags().StringP("start-date", "s", "", "start date to query a chart from; e.g 2022-08-06")
+	rootCmd.PersistentFlags().StringP("end-date", "e", "", "end date to query a chart from; e.g. 2022-08-31")
 	viper.BindPFlags(rootCmd.PersistentFlags())
 	viper.AutomaticEnv()
 
 	// rootCmd.MarkFlagRequired("asset")
 	// rootCmd.MarkFlagRequired("indicator")
-}
-
-func setLogLevel(loglevel string) {
-	l := strings.ToLower(loglevel)
-	if l == "info" {
-		log.SetLevel(log.InfoLevel)
-	} else if l == "warn" {
-		log.SetLevel(log.WarnLevel)
-	} else if l == "error" {
-		log.SetLevel(log.ErrorLevel)
-	} else if l == "debug" {
-		log.SetLevel(log.DebugLevel)
-	} else if l == "fatal" {
-		log.SetLevel(log.FatalLevel)
-	} else {
-		log.SetLevel(log.ErrorLevel)
-		log.Warn("no log level matched setting to default, ERROR")
-	}
 }

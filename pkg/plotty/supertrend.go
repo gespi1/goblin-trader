@@ -9,9 +9,24 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot/vg/draw"
 )
+
+type IndexedXYs []IndexedXY
+
+func (ixys IndexedXYs) Len() int {
+	return len(ixys)
+}
+
+func (ixys IndexedXYs) XY(i int) (float64, float64) {
+	return ixys[i].X, ixys[i].Y
+}
+
+type IndexedXY struct {
+	plotter.XY
+	OriginalIndex int
+}
 
 // ub = upperband, lb = lowerband
 func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) {
@@ -20,11 +35,9 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 	var datesX []float64
 	var datesHumanReadable []string
 
-	for _, s := range series.Candles {
-		pricesY = append(pricesY, s.ClosePrice.Float())
-		datesX = append(datesX, float64(s.Period.End.Unix()))
-		datesHumanReadable = append(datesHumanReadable, s.Period.End.String())
-	}
+	pricesY = common.GetPricesSlice(series)
+	datesX = common.GetDatesInUnixSlice(series)
+	datesHumanReadable = common.GetDatesHumanReadableSlice(series)
 
 	p := plot.New()
 	// create labeles; title, x axis label, y axis label
@@ -56,7 +69,7 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 		if err != nil {
 			log.Fatalf("Failed to create upperBand line: %v", err)
 		}
-		upperLine.Color = color.RGBA{R: 255, A: 255}
+		upperLine.Color = color.RGBA{R: 255, A: 255} // Red color
 		p.Add(upperLine)
 	}
 
@@ -65,33 +78,46 @@ func SuperTrend(series *techan.TimeSeries, ub, lb []float64, superTrend []bool) 
 		if err != nil {
 			log.Fatalf("Failed to create lowerBand line: %v", err)
 		}
-		lowerLine.Color = color.RGBA{B: 255, A: 255}
+		lowerLine.Color = color.RGBA{R: 0, G: 255, B: 0, A: 255} // Green color
 		p.Add(lowerLine)
 	}
 
-	// fmt.Println("1")
-	// fmt.Println(pricePlot)
-	// fmt.Println("2")
-	// fmt.Println(upperBandPlot)
-	// fmt.Println("3")
-	// fmt.Println(lowerBandPlot)
-
-	err := plotutil.AddLines(p,
-		"Price", pricePlot,
-	)
+	line, err := plotter.NewLine(pricePlot)
 	if err != nil {
-		log.Fatalf("Failed to add lines to plot: %v", err)
+		log.Fatalf("Failed to create new line: %v", err)
 	}
 
-	scatter, err := plotter.NewScatter(superTrendPlot)
-	if err != nil {
-		log.Fatalf("Failed to create SuperTrend scatter plot: %v", err)
-	}
-	scatter.GlyphStyle.Radius = vg.Points(2)
-	scatter.GlyphStyle.Color = color.RGBA{R: 0, G: 255, B: 0, A: 255} // Green color
-	p.Add(scatter)
+	// Set line properties
+	line.Color = color.RGBA{R: 60, G: 60, B: 60, A: 255}
+	line.Width = vg.Points(1) // line thickness
 
-	if err := p.Save(10*vg.Inch, 5*vg.Inch, "supertrend.png"); err != nil {
+	// Add the price line to the plot
+	p.Add(line)
+
+	combinedSuperTrend := make(IndexedXYs, 0, len(superTrend))
+	for i := range superTrend {
+		if shouldPlotPoint(i, superTrend) {
+			combinedSuperTrend = append(combinedSuperTrend, IndexedXY{XY: plotter.XY{X: float64(datesX[i]), Y: pricesY[i]}, OriginalIndex: i})
+		}
+	}
+
+	scatterCombined, err := plotter.NewScatter(combinedSuperTrend)
+	if err != nil {
+		log.Fatalf("Failed to create SuperTrend scatter plot for combined values: %v", err)
+	}
+	scatterCombined.GlyphStyleFunc = func(i int) draw.GlyphStyle {
+		gs := draw.GlyphStyle{Radius: vg.Points(4), Shape: draw.CircleGlyph{}}
+		originalIndex := combinedSuperTrend[i].OriginalIndex
+		if superTrend[originalIndex] {
+			gs.Color = color.RGBA{R: 0, G: 255, B: 0, A: 255} // Green color
+		} else {
+			gs.Color = color.RGBA{R: 255, A: 255} // Red color
+		}
+		return gs
+	}
+	p.Add(scatterCombined)
+
+	if err := p.Save(15*vg.Inch, 10*vg.Inch, "supertrend.png"); err != nil {
 		log.Fatalf("Failed to save plot: %v", err)
 	}
 
@@ -119,4 +145,11 @@ func createLineSegments(epochTimes, data []float64) [][]plotter.XY {
 	}
 
 	return segments
+}
+
+func shouldPlotPoint(index int, superTrend []bool) bool {
+	if index == 0 {
+		return true
+	}
+	return superTrend[index] != superTrend[index-1]
 }
