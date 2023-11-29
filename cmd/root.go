@@ -45,7 +45,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("asset", "a", "BTC/USD", "asset to query; e.g. BTC/USD, ETH/USD")
 	rootCmd.PersistentFlags().StringP("exchange", "x", "BINANCE", "exchange to pull data from; e.g. BINANCE, COINBASE")
 	rootCmd.PersistentFlags().StringP("indicator", "i", "supertrend", "name of the indicator to use")
-	rootCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 5m 10m 1h 1d 1week")
+	rootCmd.PersistentFlags().StringP("interval", "t", "1h", "time interval; e.g. 1min, 5min, 15min, 30min, 45min, 1h, 2h, 4h, 8h, 1day, 1week, 1month")
 	rootCmd.PersistentFlags().StringP("log-level", "v", "DEBUG", "log level: INFO, WARN, ERROR, DEBUG")
 	rootCmd.PersistentFlags().StringP("start-date", "s", "", "start date to query a chart from; e.g 2022-08-06")
 	rootCmd.PersistentFlags().StringP("end-date", "e", "", "end date to query a chart from; e.g. 2022-08-31")
