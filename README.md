@@ -28,4 +28,4 @@ So far this proven to work with Cryptocurrency key pairs e.g. `BTC/USD`, `ETH/US
  ```
 
  will result in a a chart like this:
-![BTC_USD since Jan 2023](images/btc_usd-1day-Jan_2023.png)``
+![BTC_USD since Jan 2023](images/btc_usd-1day-Jan_2023.png)
