@@ -1,4 +1,5 @@
 goblin-trader
 dist/**
 *.png
+!images/*.png
 *.csv
